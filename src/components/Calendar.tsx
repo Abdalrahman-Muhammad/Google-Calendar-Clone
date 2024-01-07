@@ -151,35 +151,47 @@ type CalendarEventProps = {
 };
 
 function CalendarEvent({ event }: CalendarEventProps) {
+  const [isEditModelOpen, setIsEditModelOpen] = useState<boolean>(false);
+  const { deleteEvent, updateEvent } = useEvents();
   return (
-    <button
-      className={cc(
-        'event',
-        event.allDay && 'all-day-event',
-        event.allDay && `${event.color}`
-      )}
-    >
-      {event.allDay ? (
-        <div className="event-name">{event.name}</div>
-      ) : (
-        <>
-          <div className={`color-dot ${event.color}`}></div>
-          <div className="event-time">
-            {formatDate(parse(event.startTime, 'HH:mm', event.date), {
-              timeStyle: 'short',
-            })}
-          </div>
+    <>
+      <button
+        onClick={() => setIsEditModelOpen(true)}
+        className={cc(
+          'event',
+          event.allDay && 'all-day-event',
+          event.allDay && `${event.color}`
+        )}
+      >
+        {event.allDay ? (
           <div className="event-name">{event.name}</div>
-        </>
-      )}
-    </button>
+        ) : (
+          <>
+            <div className={`color-dot ${event.color}`}></div>
+            <div className="event-time">
+              {formatDate(parse(event.startTime, 'HH:mm', event.date), {
+                timeStyle: 'short',
+              })}
+            </div>
+            <div className="event-name">{event.name}</div>
+          </>
+        )}
+      </button>
+      <EventFormModal
+        isOpen={isEditModelOpen}
+        event={event}
+        onDelete={() => deleteEvent(event.id)}
+        onClose={() => setIsEditModelOpen(false)}
+        onSubmit={e => updateEvent(e, event.id)}
+      />
+    </>
   );
 }
 
 type EventFormModalProps = {
   onSubmit: (event: UnionOmit<Event, 'id'>) => void;
 } & (
-  | { onDelete: () => void; event: Event; date?: never }
+  | { onDelete: (eventId: string) => void; event: Event; date?: never }
   | { onDelete?: never; event?: never; date: Date }
 ) &
   Omit<ModalProps, 'children'>;
@@ -258,7 +270,13 @@ function EventFormModal({
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor={`${formId}-name`}>Name</label>
-          <input required type="text" id={`${formId}-name`} ref={nameRef} />
+          <input
+            required
+            defaultValue={event?.name}
+            type="text"
+            id={`${formId}-name`}
+            ref={nameRef}
+          />
         </div>
         <div className="form-group checkbox">
           <input
@@ -285,6 +303,7 @@ function EventFormModal({
             <label htmlFor={`${formId}-end-time`}>End Time</label>
             <input
               ref={endTimeRef}
+              defaultValue={event?.endTime}
               min={startTime}
               type="time"
               id={`${formId}-end-time`}
@@ -319,7 +338,11 @@ function EventFormModal({
             {isNew ? 'Add' : 'Edit'}
           </button>
           {onDelete != null && (
-            <button className="btn btn-delete" type="button" onClick={onDelete}>
+            <button
+              className="btn btn-delete"
+              type="button"
+              onClick={() => onDelete(event.id)}
+            >
               Delete
             </button>
           )}

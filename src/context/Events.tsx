@@ -14,6 +14,8 @@ export type Event = {
 type EventsContext = {
   events: Event[];
   addEvent: (event: UnionOmit<Event, 'id'>) => void;
+  updateEvent: (event: UnionOmit<Event, 'id'>, id: string) => void;
+  deleteEvent: (eventId: string) => void;
 };
 
 type EventsProviderProps = {
@@ -26,7 +28,17 @@ export function EventsProvider({ children }: EventsProviderProps) {
   function addEvent(event: UnionOmit<Event, 'id'>) {
     setEvents(pre => [...pre, { ...event, id: crypto.randomUUID() }]);
   }
+
+  function updateEvent(event: UnionOmit<Event, 'id'>, id: string) {
+    setEvents(pre => pre.map(e => (e.id == id ? { ...event, id } : e)));
+  }
+
+  function deleteEvent(eventId: string) {
+    setEvents(pre => pre.filter(e => e.id !== eventId));
+  }
   return (
-    <Context.Provider value={{ events, addEvent }}>{children}</Context.Provider>
+    <Context.Provider value={{ events, addEvent, deleteEvent, updateEvent }}>
+      {children}
+    </Context.Provider>
   );
 }
